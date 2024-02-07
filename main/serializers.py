@@ -34,6 +34,51 @@ class PublisherSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class AddressSerializer(serializers.ModelSerializer):
+    user_id = serializers.CharField(required = False)
+    class Meta:
+        model = Address
+        fields = '__all__'
+
+    
+
+    def create(self , validated_data):
+        print('****************',validated_data)
+        user = User.objects.get(id=validated_data['user_id'])
+        userprofile=UserProfile.objects.get(user=user)
+        print(userprofile)
+        if userprofile.address:
+            address=userprofile.address
+            address.pin_code = validated_data['pin_code']
+            address.sub_address = validated_data['sub_address']
+            address.city = validated_data['city']
+            address.district = validated_data['district']
+            address.state = validated_data['state']
+
+        else:
+            address = Address.objects.create(pin_code=validated_data['pin_code'], sub_address=validated_data['sub_address'], city=validated_data['city'], district=validated_data['district'], state=validated_data['state'])
+
+        userprofile.address = address
+        address.save()
+        userprofile.save()
+        
+        return validated_data
+    
+    def validate_pin_code(self, pin_code):
+        if not len(str(abs(pin_code))) == 6:
+            raise serializers.ValidationError('Pin code must be 6 digits')
+        return pin_code
+    
+    
+
+    def get_fields(self, *args, **kwargs):
+        fields = super(AddressSerializer, self).get_fields(*args, **kwargs)
+        request = self.context.get('request', None)
+        if request and request.method == 'POST':
+            fields['user_id'].required = True
+        return fields
+
+
 class BookSerializer(serializers.ModelSerializer):
     author = serializers.PrimaryKeyRelatedField(many=True, queryset= Author.objects.all())
     tags = serializers.PrimaryKeyRelatedField(many=True, queryset= Tag.objects.all())
@@ -59,7 +104,8 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class UserProfileSerializer(serializers.Serializer):
-    username = serializers.CharField(required = True)
+    user_id = serializers.CharField(required = True)
+    
     address = serializers.PrimaryKeyRelatedField(queryset=Address.objects.all(), required = False)
     wishlist = serializers.PrimaryKeyRelatedField(many=True, queryset=Book.objects.all())
     favorite_authors = serializers.PrimaryKeyRelatedField(many=True, queryset=Author.objects.all())
@@ -71,20 +117,19 @@ class UserProfileSerializer(serializers.Serializer):
         fields = '__all__'
 
 
-    def create(self, validated_data):
-        user = User.objects.filter(username=validated_data['username'])
-        Address = Address.object.create
-        UserProfile.objects.create(user=user, address=validated_data['address'], wishlist=validated_data['wishlist'], favorite_authors=validated_data['favorite_authors'], favorite_categories=validated_data['favorite_categories'], favorite_tags=validated_data['favorite_tags'])
+    def create(self , validated_data):
+        user = User.objects.get(id=validated_data['user_id'])
+        userprofile=UserProfile.objects.get(user=user)
+        print(userprofile)
+        if 'address' in validated_data:
+            address = Address.objects.create() if not userprofile.address else userprofile.address
 
-        return super().create(validated_data)
+        return validated_data
 
 
     def validate(self, data):
 
         return data
-
-
-    
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -99,8 +144,10 @@ class RegisterSerializer(serializers.Serializer):
         fields = ['username', 'email', 'password', 'first_name', 'last_name', 'password2']
 
     def create(self, validated_data):
-        User.objects.create_user(validated_data['username'].lower(), validated_data['email'].lower(), validated_data['password'], first_name=validated_data['first_name'], last_name=validated_data['last_name'])
-        Address.objects.create()
+        user=User.objects.create_user(validated_data['username'].lower(), validated_data['email'].lower(), validated_data['password'], first_name=validated_data['first_name'], last_name=validated_data['last_name'])
+        userprofile = UserProfile.objects.create(user=user)
+        userprofile.save()
+
         return validated_data
     
     def validate_email(self, email):

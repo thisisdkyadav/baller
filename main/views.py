@@ -4,7 +4,7 @@ from rest_framework import permissions
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from .models import Book, Author, Category, Tag, Language, Publisher, UserProfile
-from .serializers import UserProfileSerializer, BookSerializer, CategorySerializer, TagSerializer, LanguageSerializer,AuthorSerializer, PublisherSerializer, RegisterSerializer
+from .serializers import UserProfileSerializer, BookSerializer, CategorySerializer, TagSerializer, LanguageSerializer,AuthorSerializer, PublisherSerializer, RegisterSerializer, AddressSerializer
 
 
 class RegisterView(APIView):
@@ -134,6 +134,32 @@ class TagView(APIView):
         
         return Response({'message': 'No data received' , 'error': serializer.errors})
 
+class AddressView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = AddressSerializer
+
+    def get(self, request):
+        user = User.objects.get(id=request.user.id)
+        address = UserProfile.objects.get(user=user).address
+        if address:
+            serializer = AddressSerializer(address)
+            return Response(serializer.data)
+        return Response({'message': 'No address found'})
+    
+    def post(self, request):
+        user_id={'user_id': request.user.id}
+        data = request.data.copy()
+        data.update(user_id)
+        print(data)
+        
+        serializer = AddressSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Data received', 'data': serializer.data})
+        
+        return Response({'message': 'No data received' , 'error': serializer.errors})
+
 class PublisherView(APIView):
     # authentication_classes = [JWTAuthentication]
     # permission_classes = [permissions.IsAdminUser]
@@ -168,13 +194,13 @@ class UsersProfileView(APIView):
         serializer = UserProfileSerializer(profiles, many=True)
         return Response(serializer.data)
     
-    def post(self, request):
-        data = request.data
-        # data['user'] = User.objects.filter(username=data['user'])
-        # print(data['user'])
-        serializer = UserProfileSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'message': 'Data received', 'data': serializer.data})
+    # def post(self, request):
+    #     user_id={'user_id': request.user.id}
+    #     data = request.data.copy()
+    #     data.update(user_id)
+    #     serializer = UserProfileSerializer(data=data)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         return Response({'message': 'Data received', 'data': serializer.data})
         
-        return Response({'message': 'No data received' , 'error': serializer.errors})
+    #     return Response({'message': 'No data received' , 'error': serializer.errors})

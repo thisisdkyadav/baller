@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import UsersProfileView, BooksView, AuthorView, LanguageView, PublisherView, CategoryView, TagView, RegisterView
+from .views import UsersProfileView, BooksView, AuthorView, LanguageView, PublisherView, CategoryView, TagView, RegisterView, AddressView
 
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -8,6 +8,7 @@ from rest_framework_simplejwt.views import (
 
 urlpatterns = [
     path('api/users/', UsersProfileView.as_view()),
+    path('api/address/', AddressView.as_view()),
     path('api/books/', BooksView.as_view()),
     path('api/authors/', AuthorView.as_view()),
     path('api/languages/', LanguageView.as_view()),

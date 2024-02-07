@@ -1,13 +1,29 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+# class UserProfile(User):
+#     image = models.ImageField(upload_to='user_images/',default='default_profile.svg')
+#     bio = models.TextField(blank=True)
+#     phone = models.CharField(max_length=10)
+#     address = models.ForeignKey('Address', on_delete=models.CASCADE, blank=True)
+#     wishlist = models.ManyToManyField('Book', blank=True)
+#     favorite_authors = models.ManyToManyField('Author', blank=True)
+#     favorite_categories = models.ManyToManyField('Category', blank=True)
+#     favorite_tags = models.ManyToManyField('Tag', blank=True)
+
+#     # def getAllReviews(self):
+#     #     return self.review_set.all()
+
+#     def __str__(self):
+#         return self.username
+
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     image = models.ImageField(upload_to='user_images/',default='default_profile.svg')
     bio = models.TextField(blank=True)
-    phone = models.CharField(max_length=10)
-    address = models.ForeignKey('Address', on_delete=models.CASCADE, blank=True)
+    phone = models.CharField(max_length=10, blank=True)
+    address = models.ForeignKey('Address', on_delete=models.CASCADE, blank=True,null=True)
     wishlist = models.ManyToManyField('Book', blank=True)
     favorite_authors = models.ManyToManyField('Author', blank=True)
     favorite_categories = models.ManyToManyField('Category', blank=True)
@@ -15,14 +31,6 @@ class UserProfile(models.Model):
 
     def getAllReviews(self):
         return self.review_set.all()
-    
-    def age(self):
-        import datetime
-        today = datetime.date
-        if (today.month == self.dob.month and today.day >= self.dob.day) or today.month > self.dob.month:
-            return today.year - self.dob.year
-        else:
-            return today.year - self.dob.year - 1
 
     def __str__(self):
         return self.user.username
@@ -105,7 +113,7 @@ class Language(models.Model):
 
 class Review(models.Model):
     book = models.ForeignKey('Book', on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey('UserProfile', on_delete=models.CASCADE)
     review = models.TextField()
     rating = models.IntegerField()
 
@@ -114,11 +122,11 @@ class Review(models.Model):
     
 
 class Address(models.Model):
-    pin_code = models.IntegerField(blank =True)
-    sub_address = models.TextField(blank =True)
-    city = models.CharField(max_length=100,blank =True)
-    district = models.CharField(max_length=100,blank =True)
-    state = models.CharField(max_length=100,blank =True)
+    pin_code = models.IntegerField()
+    sub_address = models.TextField()
+    city = models.CharField(max_length=100)
+    district = models.CharField(max_length=100)
+    state = models.CharField(max_length=100)
 
     def getFullAddress(self):
         return f"{self.sub_address}, {self.city}, {self.district}, {self.state} - {self.pin_code}"
@@ -147,7 +155,7 @@ class CartItem(models.Model):
     
 
 class Cart(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey('UserProfile', on_delete=models.CASCADE)
     items = models.ManyToManyField('CartItem')
     total = models.DecimalField(max_digits=5, decimal_places=2)
 
