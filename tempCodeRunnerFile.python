@@ -1,3 +1,0 @@
-a = 'sfAD%&*.87 gb78'
-
-print(a.upper())
